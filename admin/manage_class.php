@@ -71,18 +71,36 @@ $(document).ready(function(){
         e.preventDefault();
         start_load();
         $('#msg').html('');
+        
+        // Get the values of the "Section" and "Faculty" fields
+        var section = $('#section').val();
+        var facultySelected = $('input[name="faculty_id[]"]:checked').length;
 
+        // Check if "Section" is filled and at least one faculty is selected
+        if (!section) {
+            $('#msg').html('<div class="alert alert-danger"><i class="fa fa-exclamation-triangle"></i> Please enter a Section.</div>');
+            end_load();
+            return; // Prevent form submission if validation fails
+        }
+
+        if (facultySelected < 1) {
+            $('#msg').html('<div class="alert alert-danger"><i class="fa fa-exclamation-triangle"></i> Please select at least one faculty member.</div>');
+            end_load();
+            return; // Prevent form submission if no faculty is selected
+        }
+
+        // If validation passes, proceed with the AJAX request
         $.ajax({
             url: 'ajax.php?action=save_class',
             method: 'POST',
             data: $(this).serialize(),
             success: function(resp){
-                if(resp == 1){
+                if (resp == 1) {
                     alert_toast("Data successfully saved.", "success");
                     setTimeout(function(){
                         location.reload();
                     }, 1750);
-                } else if(resp == 2){
+                } else if (resp == 2) {
                     $('#msg').html('<div class="alert alert-danger"><i class="fa fa-exclamation-triangle"></i> Class already exists.</div>');
                 } else {
                     $('#msg').html('<div class="alert alert-danger"><i class="fa fa-exclamation-triangle"></i> An error occurred while saving the class. Please try again.</div>');
@@ -92,4 +110,5 @@ $(document).ready(function(){
         });
     });
 });
+
 </script>

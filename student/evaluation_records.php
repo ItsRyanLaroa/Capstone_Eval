@@ -19,7 +19,7 @@ function ordinal_suffix($num) {
         <span style="color: #dc143c"><h3 class="text-center" style="font-weight: bold;">List of teachers you've evaluated</h3></span>
         
         <!-- Academic Year and Semester Filter -->
-        <div class="dataTables_length" id="evaluation-table_length">
+        <div class="dataTables" id="evaluation-table_length">
             <label for="academic-filter">Year & Semester:</label>
             <select id="academic-filter">
                 <option value="">All</option>
@@ -44,6 +44,7 @@ function ordinal_suffix($num) {
                     <th>Subject</th>
                     <th>Academic Year</th>
                     <th>Class</th>
+                    <th>Status</th>
                 </tr>
             </thead>
             <tbody id="evaluation-table-body">
@@ -77,6 +78,7 @@ function ordinal_suffix($num) {
                     <td><?php echo $row['subject']; ?></td>
                     <td><?php echo $row['academic_year'] . ' ' . ordinal_suffix($row['academic_semester']) . ' Semester'; ?></td>
                     <td><?php echo $row['curriculum'] . ' (' . $row['class_details'] . ')'; ?></td>
+                    <td><span class="badge badge-success">Completed</span></td>
                 </tr>
                 <?php endwhile; ?>
             </tbody>
@@ -85,7 +87,15 @@ function ordinal_suffix($num) {
 </div>
 
 <style>
-   
+   .badge-success {
+    background-color: #ffc107;
+    color: #000;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 12px;
+    max-width: 80px;
+}
+
     .bg-gradient-secondary {
         background: #B31B1C linear-gradient(182deg, #b31b1b, #dc3545) repeat-x !important;
         color: #fff;
@@ -144,7 +154,13 @@ function ordinal_suffix($num) {
         font-size: 20px;
     }
 }
+.dataTables_length{
+    float: left;
+   
+    
+}
 
+   
 
 @media (max-width: 430px) {
     .callout.callout-info {

@@ -196,7 +196,12 @@ if($action == 'get_report'){
 		echo $get;
 }
 
-
+if($action == 'fetch_result'){
+	$get = $crud->fetch_result
+	();
+	if($get)
+		echo $get;
+}
 if($action == 'view_report'){
 	$get = $crud->view_report();
 	if($get)

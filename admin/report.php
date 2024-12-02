@@ -1,356 +1,307 @@
-<?php
-include 'db_connect.php';
 
-function ordinal_suffix($num) {
-    $num = $num % 100;
-    if ($num < 11 || $num > 13) {
-        switch ($num % 10) {
-            case 1: return $num . 'st';
-            case 2: return $num . 'nd';
-            case 3: return $num . 'rd';
+<?php $faculty_id = isset($_GET['fid']) ? $_GET['fid'] : '' ; ?>
+<?php 
+function ordinal_suffix($num){
+    $num = $num % 100; // protect against large numbers
+    if($num < 11 || $num > 13){
+         switch($num % 10){
+            case 1: return $num.'st';
+            case 2: return $num.'nd';
+            case 3: return $num.'rd';
         }
     }
-    return $num . 'th';
+    return $num.'th';
 }
 ?>
+<div class="col-lg-12">
+    <div class="callout callout-info">
+        <div class="d-flex w-100 justify-content-center align-items-center">
+            <label for="faculty">Select Faculty</label>
+            <div class="mx-2 col-md-4">
+                <select name="" id="faculty_id" class="form-control form-control-sm select2">
+                    <option value=""></option>
+                    <?php 
+                    $faculty = $conn->query("SELECT *,concat(firstname,' ',lastname) as name FROM faculty_list order by concat(firstname,' ',lastname) asc");
+                    $f_arr = array();
+                    $fname = array();
+                    while($row=$faculty->fetch_assoc()):
+                        $f_arr[$row['id']]= $row;
+                        $fname[$row['id']]= ucwords($row['name']);
+                    ?>
+                    <option value="<?php echo $row['id'] ?>" <?php echo isset($faculty_id) && $faculty_id == $row['id'] ? "selected" : "" ?>><?php echo ucwords($row['name']) ?></option>
+                    <?php endwhile; ?>
+                </select>
+            </div>
+        </div>
+    </div>
+    <!-- New button to toggle evaluation status -->
+    <div class="text-right mb-3 d-flex align-items-center justify-content-end">
+        <span class="mr-2 font-weight-bold">View Status:</span>
+        <button id="toggle-status-btn" class="btn btn-primary">Activate All</button>
+    </div>
+    <div class="row">
+        <div class="col-md-12 mb-1">
+            <div class="d-flex justify-content-end w-100">
+                <button class="btn btn-sm btn-success bg-gradient-success" style="display:none" id="print-btn"><i class="fa fa-print"></i> Print</button>
+            </div>
+        </div>
+    </div>
+	<div class="row">
+		<div class="col-md-3">
+			<div class="callout callout-info">
+				<div class="list-group" id="class-list">
+					
+				</div>
+			</div>
+		</div>
+		<div class="col-md-9">
+			<div class="callout callout-info" id="printable">
+			<div>
+			<h3 class="text-center">Evaluation Report</h3>
+			<hr>
+			<table width="100%">
+					<tr>
+						<td width="50%"><p><b>Faculty: <span id="fname"></span></b></p></td>
+						<td width="50%"><p><b>Academic Year: <span id="ay"><?php echo $_SESSION['academic']['year'].' '.(ordinal_suffix($_SESSION['academic']['semester'])) ?> Semester</span></b></p></td>
+					</tr>
+					<tr>
+						<td width="50%"><p><b>Class: <span id="classField"></span></b></p></td>
+						<td width="50%"><p><b>Subject: <span id="subjectField"></span></b></p></td>
+					</tr>
+			</table>
+				<p class=""><b>Total Student Evaluated: <span id="tse"></span></b></p>
+				<p width="50%"><b>Average Ratings: <span id="averageRating" style="color: #dc143c;"></span></b></p>
+			</div>
+				<fieldset class="border border-info p-2 w-100">
+				   <legend  class="w-auto">Rating Legend</legend>
+				   <p>5 = Strongly Agree, 4 = Agree, 3 = Uncertain, 2 = Disagree, 1 = Strongly Disagree</p>
+				</fieldset>
+				<?php 
+							$q_arr = array();
+						$criteria = $conn->query("SELECT * FROM criteria_list where id in (SELECT criteria_id FROM question_list where academic_id = {$_SESSION['academic']['id']} ) order by abs(order_by) asc ");
+						while($crow = $criteria->fetch_assoc()):
+					?>
+					<table class="table table-condensed wborder">
+						<thead>
+							<tr class="bg-gradient-secondary">
+								<th class=" p-1"><b><?php echo $crow['criteria'] ?></b></th>
+								<th width="5%" class="text-center">1</th>
+								<th width="5%" class="text-center">2</th>
+								<th width="5%" class="text-center">3</th>
+								<th width="5%" class="text-center">4</th>
+								<th width="5%" class="text-center">5</th>
+							</tr>
+						</thead>
+						<tbody class="tr-sortable">
+							<?php 
+							$questions = $conn->query("SELECT * FROM question_list where criteria_id = {$crow['id']} and academic_id = {$_SESSION['academic']['id']} order by abs(order_by) asc ");
+							while($row=$questions->fetch_assoc()):
+							$q_arr[$row['id']] = $row;
+							?>
+							<tr class="bg-white">
+								<td class="p-1" width="40%">
+									<?php echo $row['question'] ?>
+								</td>
+								<?php for($c=1;$c<=5;$c++): ?>
+								<td class="text-center">
+									<span class="rate_<?php echo $c.'_'.$row['id'] ?> rates"></span>
+			                      </div>
+								</td>
+								<?php endfor; ?>
+							</tr>
+							<?php endwhile; ?>
+						</tbody>
+					</table>
+					<?php endwhile; ?>
+			</div>
+		</div>
+	</div>
+</div>
 <style>
-.bg-gradient-secondary {
+	.list-group-item.active {
+    z-index: 2;
+    color: #fff;
+    background-color: #dc143c;
+}
+    .bg-gradient-secondary {
     background: #B31B1C linear-gradient(182deg, #b31b1b, #dc3545) repeat-x !important;
     color: #fff;
 }
-.user-icon {
-    display: flex;
-    align-items: center;
-    margin: 15px 0;
-}
-.modal-content {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    pointer-events: auto;
-    background-color: #fff;
-    border: 1px solid rgba(0, 0, 0, .2);
-    border-radius: .3rem;
-    box-shadow: 0 .25rem .5rem rgba(0, 0, 0, .5);
-}
-.card-body {
-    display: flex;
-    align-items: center;
-}
-.font-weight-bold {
-    font-weight: bold;
-}
-.card-text {
-    margin: 0;
-    font-size: 22px;
-}
-.card:hover {
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-.btn-info {
-    margin-top: 15px;
+
+.bg-gradient-success {
+    border: #9b0a1e !important;
+    background: #9b0a1e !important;
     color: #fff;
-    background-color: #007bff;
-    border-color: #007bff;
-}
-.btn-info:hover {
-    background-color: black;
-    border-color: black;
-}
-.callout.callout-info{
-    border-left-color: #9b0a1e;
-}
-.card{
-    background-color: #dc143c;
-}
-.ml-3{
-    color: white;
-}
-.ml-3 h5{
-    font-size: 24px;
 }
 
-thead th {
-    background-color: #9b0a1e;
-    color: #f3f3f3;
-    font-weight: bold;
+    .callout.callout-info{
+    border-left-color: #9b0a1e !important;
 }
-
-@media (max-width: 540px) {
-    .callout.callout-info {
-        padding: 10px;
-        font-size: 14px;
-    }
-
-    .input-group.mb-3 {
-        max-width: 80%;
-    }
-
-    .btn-info {
-        font-size: 12px;
-    }
-
-    .card-body {
-        padding: 10px;
-    }
-
-    .table th, .table td {
-        font-size: 12px;
-        padding: 8px;
-    }
-
-    .font-weight-bold {
-        font-size: 14px;
-    }
-
-    .ml-3 h5 {
-        font-size: 20px;
-    }
-}
-
-
-@media (max-width: 430px) {
-    .callout.callout-info {
-        padding: 8px;
-        font-size: 12px;
-    }
-
-    .input-group.mb-3 {
-        max-width: 90%;
-    }
-
-    .btn-info {
-        font-size: 10px;
-        padding: 5px 10px;
-    }
-
-    .card-body {
-        padding: 8px;
-    }
-
-    .table th, .table td {
-        font-size: 10px;
-        padding: 6px;
-    }
-
-    .font-weight-bold {
-        font-size: 12px;
-    }
-
-    .ml-3 h5 {
-        font-size: 18px;
-    }
-}
-
-@media (max-width: 414px) {
-    .callout.callout-info {
-        padding: 6px;
-        font-size: 10px;
-    }
-
-    .input-group.mb-3 {
-        max-width: 95%;
-    }
-
-    .btn-info {
-        font-size: 9px;
-        padding: 4px 8px;
-    }
-
-    .card-body {
-        padding: 6px;
-    }
-
-    .table th, .table td {
-        font-size: 9px;
-        padding: 5px;
-    }
-
-    .font-weight-bold {
-        font-size: 10px;
-    }
-
-    .ml-3 h5 {
-        font-size: 16px;
-    }
+.border-info {
+    border-color: #9b0a1e !important;
 }
 </style>
-<div class="col-lg-12">
-    <div class="callout callout-info">
-        <div class="input-group mb-3" style="max-width: 40%; margin-left: auto;">
-            <input type="text" id="search-input" class="form-control" placeholder="Search...">
-            <div class="input-group-append">
-                <span class="input-group-text">Search</span>
-            </div>
-        </div>
-        <div class="text-right mb-3 d-flex align-items-center justify-content-end">
-            <span class="mr-2 font-weight-bold">View evaluation result for teacher:</span>
-            <button id="toggle-status-btn" class="btn btn-primary">View Status</button>
-        </div>
-
-        <table class="table table-bordered table-striped">
-            <thead>
-                <tr>
-                    <th>Faculty Name</th>
-                    <th>Academic Year</th>
-                    <th>Subject</th>
-                    <th>Student Evaluated</th>
-                    <th>Status</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody id="evaluation-table">
-                <?php 
-                $faculty = $conn->query("SELECT f.id, 
-                                                CONCAT(f.firstname, ' ', f.lastname) AS faculty_name, 
-                                                f.avatar,
-                                                r.academic_id, 
-                                                a.year AS academic_year, 
-                                                r.class_id, 
-                                                cl.curriculum, 
-                                                CONCAT(cl.level, ' - ', cl.section) AS class_details, 
-                                                r.subject_id, 
-                                                sl.subject,
-                                                CONCAT(st.firstname, ' ', st.lastname) AS student_name,
-                                                r.status
-                                        FROM faculty_list f
-                                        LEFT JOIN evaluation_list r ON r.faculty_id = f.id
-                                        LEFT JOIN class_list cl ON r.class_id = cl.id
-                                        LEFT JOIN subject_list sl ON r.subject_id = sl.id
-                                        LEFT JOIN student_list st ON r.student_id = st.id
-                                        LEFT JOIN academic_list a ON r.academic_id = a.id
-                                        WHERE r.academic_id = {$_SESSION['academic']['id']}
-                                        ORDER BY CONCAT(f.firstname, ' ', f.lastname) ASC");
-
-                while ($row = $faculty->fetch_assoc()): 
-                    $avatar = !empty($row['avatar']) ? 'assets/uploads/' . $row['avatar'] : 'assets/uploads/default_avatar.png';
-                ?>
-                <tr>
-                    <td><?php echo ucwords($row['faculty_name']); ?></td>
-                    <td><?php echo $row['academic_year'] . ' ' . ordinal_suffix($_SESSION['academic']['semester']) . ' Semester'; ?></td>
-                    <td><?php echo $row['subject']; ?></td>
-                    <td><?php echo ucwords($row['student_name']); ?></td>
-                    <td><span class="evaluation-status"><?php echo ucwords($row['status']); ?></span></td>
-                    <td>
-                        <button class="btn btn-info view-report" data-id="<?php echo $row['id']; ?>" data-subject-id="<?php echo $row['subject_id']; ?>" data-class-id="<?php echo $row['class_id']; ?>">
-                            <i class="fa fa-eye"></i> 
-                        </button>
-                    </td>
-                </tr>
-                <?php endwhile; ?>
-            </tbody>
-        </table>
-
-        <div id="pagination-controls" class="text-center mt-3">
-            <button id="prev-page" class="btn btn-secondary">Previous</button>
-            <button id="next-page" class="btn btn-secondary">Next</button>
-        </div>
-    </div>
-</div>
-
-<div class="modal fade" id="report-modal" tabindex="-1" role="dialog" aria-labelledby="reportModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="reportModalLabel">Evaluation Report</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                <div id="report-content"></div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-            </div>
-        </div>
-    </div>
-</div>
+<noscript>
+	<style>
+		table{
+			width:100%;
+			border-collapse: collapse;
+		}
+		table.wborder tr,table.wborder td,table.wborder th{
+			border:1px solid gray;
+			padding: 3px
+		}
+		table.wborder thead tr{
+			background: #6c757d linear-gradient(180deg,#828a91,#6c757d) repeat-x!important;
+    		color: #fff;
+		}
+		.text-center{
+			text-align:center;
+		} 
+		.text-right{
+			text-align:right;
+		} 
+		.text-left{
+			text-align:left;
+		} 
+	</style>
+</noscript>
 <script>
-    $(document).ready(function() {
-        const itemsPerPage = 6;
-        let currentPage = 1;
+	 $(document).ready(function() {
+        $('#faculty_id').change(function(){
+            if($(this).val() > 0)
+            window.history.pushState({}, null, './index.php?page=report&fid='+$(this).val());
+            load_class()
+        })
+        if($('#faculty_id').val() > 0)
+            load_class()
+    });
 
-        function showPage(page) {
-            const start = (page - 1) * itemsPerPage;
-            const end = start + itemsPerPage;
-            $('#evaluation-table tr').hide();
-            $('#evaluation-table tr').slice(start, end).show();
-            $('#prev-page').toggle(page > 1);
-            $('#next-page').toggle($('#evaluation-table tr:visible').length === itemsPerPage);
-        }
-
-        showPage(currentPage);
-
-        $('#prev-page').click(function() {
-            if (currentPage > 1) {
-                currentPage--;
-                showPage(currentPage);
+    // Script for toggling evaluation status
+    $('#toggle-status-btn').click(function() {
+        const newStatus = $(this).text() === 'Activate All' ? 'active' : 'pending';
+        $.ajax({
+            url: 'ajax.php?action=toggle_status',
+            method: 'POST',
+            data: { status: newStatus },
+            success: function(response) {
+                $('.evaluation-status').text(newStatus.charAt(0).toUpperCase() + newStatus.slice(1));
+                $('#toggle-status-btn').text(newStatus === 'active' ? 'Deactivate All' : 'Activate All');
+            },
+            error: function(err) {
+                console.error('Error toggling status:', err);
             }
         });
-
-        $('#next-page').click(function() {
-            currentPage++;
-            showPage(currentPage);
-        });
-
-        $('#search-input').on('keyup', function() {
-            const searchTerm = this.value.toLowerCase();
-            $('#evaluation-table tr').each(function() {
-                const facultyName = $(this).find('td').eq(1).text().toLowerCase();
-                $(this).toggle(facultyName.includes(searchTerm));
-            });
-            currentPage = 1;
-            showPage(currentPage);
-        });
-
-        $('#toggle-status-btn').click(function() {
-            const newStatus = $(this).text() === 'Activate All' ? 'active' : 'pending';
-            $.ajax({
-                url: 'ajax.php?action=toggle_status',
-                method: 'POST',
-                data: { status: newStatus },
-                success: function(response) {
-                    $('.evaluation-status').text(newStatus.charAt(0).toUpperCase() + newStatus.slice(1));
-                    $('#toggle-status-btn').text(newStatus === 'active' ? 'Deactivate All' : 'Activate All');
-                },
-                error: function(err) {
-                    console.error('Error toggling status:', err);
-                }
-            });
-        });
-
-        $('.view-report').click(function() {
-            var faculty_id = $(this).data('id');
-            var subject_id = $(this).data('subject-id');
-            var class_id = $(this).data('class-id');
-
-            $.ajax({
-                url: 'ajax.php?action=view_report',
-                method: 'POST',
-                data: {
-                    faculty_id: faculty_id,
-                    subject_id: subject_id,
-                    class_id: class_id
-                },
-                success: function(response) {
-                    var data = JSON.parse(response);
-                    displayReport(data);
-                },
-                error: function(err) {
-                    console.error('Error fetching report:', err);
-                }
-            });
-        });
-
-        function displayReport(data) {
-            var reportHtml = `<h6>Total Students Evaluated: ${data.tse}</h6>`;
-            reportHtml += `<h3>Overall Average Rating: ${data.averageRating}/5</h3>`;
-            reportHtml += `<h5>Feedback:</h5><p>${data.feedback}</p>`;
-            
-            $('#report-content').html(reportHtml);
-            $('#report-modal').modal('show');
-        }
     });
+
+	function load_class(){
+		start_load()
+		var fname = <?php echo json_encode($fname) ?>;
+		$('#fname').text(fname[$('#faculty_id').val()])
+		$.ajax({
+			url:"ajax.php?action=get_class",
+			method:'POST',
+			data:{fid:$('#faculty_id').val()},
+			error:function(err){
+				console.log(err)
+				alert_toast("An error occured",'error')
+				end_load()
+			},
+			success:function(resp){
+				if(resp){
+					resp = JSON.parse(resp)
+					if(Object.keys(resp).length <= 0 ){
+						$('#class-list').html('<a href="javascript:void(0)" class="list-group-item list-group-item-action disabled">No data to be display.</a>')
+					}else{
+						$('#class-list').html('')
+						Object.keys(resp).map(k=>{
+						$('#class-list').append('<a href="javascript:void(0)" data-json=\''+JSON.stringify(resp[k])+'\' data-id="'+resp[k].id+'" class="list-group-item list-group-item-action show-result">'+resp[k].class+' - '+resp[k].subj+'</a>')
+						})
+
+					}
+				}
+			},
+			complete:function(){
+				end_load()
+				anchor_func()
+				if('<?php echo isset($_GET['rid']) ?>' == 1){
+					$('.show-result[data-id="<?php echo isset($_GET['rid']) ? $_GET['rid'] : '' ?>"]').trigger('click')
+				}else{
+					$('.show-result').first().trigger('click')
+				}
+			}
+		})
+	}
+	function anchor_func(){
+		$('.show-result').click(function(){
+			var vars = [], hash;
+			var data = $(this).attr('data-json')
+				data = JSON.parse(data)
+			var _href = location.href.slice(window.location.href.indexOf('?') + 1).split('&');
+			for(var i = 0; i < _href.length; i++)
+				{
+					hash = _href[i].split('=');
+					vars[hash[0]] = hash[1];
+				}
+			window.history.pushState({}, null, './index.php?page=report&fid='+vars.fid+'&rid='+data.id);
+			load_report(vars.fid,data.sid,data.id);
+			$('#subjectField').text(data.subj)
+			$('#classField').text(data.class)
+			$('.show-result.active').removeClass('active')
+			$(this).addClass('active')
+		})
+	}
+	function load_report($faculty_id, $subject_id, $class_id){
+        if($('#preloader2').length <= 0) start_load();
+        $.ajax({
+            url: 'ajax.php?action=get_report',
+            method: "POST",
+            data: {faculty_id: $faculty_id, subject_id: $subject_id, class_id: $class_id},
+            error: function(err){
+                console.log(err);
+                alert_toast("An Error Occurred.", "error");
+                end_load();
+            },
+            success: function(resp){
+                if(resp){
+                    resp = JSON.parse(resp);
+                    if(Object.keys(resp).length <= 0){
+                        $('.rates').text('');
+                        $('#tse').text('');
+                        $('#averageRating').text(''); // Clear average rating
+                        $('#print-btn').hide();
+                    } else {
+                        $('#print-btn').show();
+                        $('#tse').text(resp.tse);
+                        $('#averageRating').text(resp.averageRating); // Display average rating
+                        $('.rates').text('-');
+                        var data = resp.data;
+                        Object.keys(data).map(q=>{
+                            Object.keys(data[q]).map(r=>{
+                                var rate = parseFloat(data[q][r]).toFixed(2);
+                                $('.rate_'+r+'_'+q).text(rate);
+                            });
+                        });
+                    }
+                }
+             },
+			complete:function(){
+				end_load()
+			}
+		})
+	}
+	$('#print-btn').click(function(){
+		start_load()
+		var ns =$('noscript').clone()
+		var content = $('#printable').html()
+		ns.append(content)
+		var nw = window.open("Report","_blank","width=900,height=700")
+		nw.document.write(ns.html())
+		nw.document.close()
+		nw.print()
+		setTimeout(function(){
+			nw.close()
+			end_load()
+		},750)
+	})
 </script>

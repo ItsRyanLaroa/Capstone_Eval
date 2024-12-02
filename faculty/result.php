@@ -27,6 +27,7 @@ function ordinal_suffix($num){
 
     .callout.callout-info{
     border-left-color: #9b0a1e !important;
+    border:none;
 }
 .border-info {
     border-color: #9b0a1e !important;

@@ -27,27 +27,40 @@ if(isset($_GET['id'])){
 </div>
 <script>
 	$(document).ready(function(){
-		$('#manage-subject').submit(function(e){
-			e.preventDefault();
-			start_load()
-			$('#msg').html('')
-			$.ajax({
-				url:'ajax.php?action=save_subject',
-				method:'POST',
-				data:$(this).serialize(),
-				success:function(resp){
-					if(resp == 1){
-						alert_toast("Data successfully saved.","success");
-						setTimeout(function(){
-							location.reload()	
-						},1750)
-					}else if(resp == 2){
-						$('#msg').html('<div class="alert alert-danger"><i class="fa fa-exclamation-triangle"></i> Subject Code already exist.</div>')
-						end_load()
-					}
-				}
-			})
-		})
-	})
+    $('#manage-subject').submit(function(e){
+        e.preventDefault();
+        start_load()
+        $('#msg').html('')
+        
+        // Get the values of the required fields
+        var subjectCode = $('#code').val();
+        var subjectName = $('#subject').val();
+        
+        // Check if the required fields "Subject Code" and "Subject" are filled
+        if (!subjectCode || !subjectName) {
+            $('#msg').html('<div class="alert alert-danger"><i class="fa fa-exclamation-triangle"></i> Please fill out both Subject Code and Subject fields.</div>')
+            end_load()
+            return; // Prevent form submission if validation fails
+        }
+
+        $.ajax({
+            url: 'ajax.php?action=save_subject',
+            method: 'POST',
+            data: $(this).serialize(),
+            success: function(resp){
+                if (resp == 1) {
+                    alert_toast("Data successfully saved.", "success");
+                    setTimeout(function(){
+                        location.reload()    
+                    }, 1750)
+                } else if (resp == 2) {
+                    $('#msg').html('<div class="alert alert-danger"><i class="fa fa-exclamation-triangle"></i> Subject Code already exist.</div>')
+                    end_load()
+                }
+            }
+        })
+    })
+})
+
 
 </script>

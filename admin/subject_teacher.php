@@ -103,6 +103,7 @@ if (!$teachers_qry) {
         .btn-danger.btn-flat {
             font-size: 12px;
             padding: 6px;
+            
         }
 
  
@@ -198,7 +199,9 @@ if (!$teachers_qry) {
                         <td><?php echo htmlspecialchars($row['full_name']); ?></td>
                         <td><?php echo htmlspecialchars($row['year']); ?></td>
                         <td>
-                            <button type="button" class="btn btn-danger btn-flat delete_subject" data-id="<?php echo $row['subject_teacher_id'] ?>">
+                            <button type="button" class="btn btn-danger btn-flat delete_subject" style=" color: #9b0a1e;
+    background-color: transparent;
+    border: none;" data-id="<?php echo $row['subject_teacher_id'] ?>">
                                 <i class="fas fa-trash"></i>
                             </button>
                         </td>

@@ -90,7 +90,9 @@ thead th {
     border-top-left-radius: .25rem;
     border-top-right-radius: .25rem;
 }
-
+.btn-group{
+	float: left;
+}
 /* Button styles */
 .btn-primary {
     color: blue;
